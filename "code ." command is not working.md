@@ -13,8 +13,12 @@ flowchart TD
     B --> D['uninstall code']
     D --> E['install code']
     E --> F{Did it work?}
-    F -- Yes --> G[Well done, engineer with no license]
+    F -- Yes --> G[Well done, engineer with no license but we are not done]
     F -- No --> h[Throw that overpriced thing away]
+    G --> H[Please restart your box]
+    H --> I[Does 'code .' still work?]
+    I -- Yes --> J[Not bad for an engineer with no license]
+    I -- NO --> h
 ```
 
 ---
