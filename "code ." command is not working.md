@@ -1,4 +1,8 @@
-Estimated waste of time fixing this instead of doing your work: 30 mins to 1 hour
+| Estimated waste of time     | Frustratometer |
+| ----------- | ----------- |
+| 30 mins - 1 hour      | ![](https://geps.dev/progress/10?dangerColor=006600)       |
+
+
 
 TLDR: Throw VS Code in the Applications Folder, uninstall code, reinstall code
 
@@ -13,7 +17,7 @@ flowchart TD
     B --> D['uninstall code']
     D --> E['install code']
     E --> F{Did it work?}
-    F -- Yes --> G[Well done, engineer with no license but we are not done]
+    F -- Yes --> G[Well done, engineer with no license, but we are not done yet]
     F -- No --> h[Throw that overpriced thing away]
     G --> H[Please restart your box]
     H --> I[Does 'code .' still work?]
