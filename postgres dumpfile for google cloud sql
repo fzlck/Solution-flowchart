@@ -1,0 +1,14 @@
+1. pg_dump -h localhost -p 5433 -d chopin_xviii --no-owner > chopin_dump.sql
+2. find ~ -name chopin_dump.sql
+
+Add the ff
+CREATE SCHEMA IF NOT EXISTS public;
+
+Comment out all lines with
+-- OWNER TO postgres;
+
+
+
+
+
+
