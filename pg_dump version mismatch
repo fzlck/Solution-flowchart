@@ -1,0 +1,7 @@
+Description: postgresql@17 installed manually, previous versions insalled via homebrew
+
+1. brew uninstall postgresql
+2. find / -name pg_dump -type f 2>/dev/null
+3. sudo ln -s /Library/PostgreSQL/17/bin/pg_dump /usr/local/bin/pg_dump
+4. pg_dump --version 
+
