@@ -1,7 +1,8 @@
-1. Create docker image for node + typeorm + expressjs + typescript app
+Create docker image for node + typeorm + expressjs + typescript app
+Time estimate for first timer + worst case medium: 2 hrs
 
 0. prerequisites: 
-1. package.json
+- package.json
 -- main entry point should be "dist/index.js" because the compiled js->ts code goes here
 
 "main": "dist/index.js",
@@ -11,10 +12,10 @@
   "dev": "nodemon --watch src --ext ts --exec ts-node src/index.ts",
   "start": "node dist/index.js"
 }
-2. docker up
-3. VERY IMPORTANT: npm run build + node dist/index.js works! otherwise, fix everything first
+- docker is up and running
+- VERY IMPORTANT: npm run build + node dist/index.js works with no problems, otherwise, fix everything first
 
-4. Dockerfile
+1. Dockerfile: basic stuff, if you prompt this w/ AI tools, make sure to specify typescript
 FROM node:18
 
 WORKDIR /usr/src/app
@@ -31,11 +32,10 @@ EXPOSE 3000
 
 CMD ["node", "dist/index.js"]
 
+2. docker build -t your-backend .
+3. docker run -p 3000:3000 your-backend
 
-5. docker build -t your-backend .
-6. docker run -p 3000:3000 your-backend
-
-Extra magic tricks when coming across errors been there done that.
+Extra magic tricks when coming across errors. Been there done that.
 
 Check which process is using port 3000
 lsof -i :3000
@@ -49,6 +49,7 @@ docker ps
 Stop docker container
 docker stop <CONTAINER ID>
 
+Remove docker container
 docker rm <CONTAINER ID>
 
 
@@ -56,8 +57,7 @@ Errors encountered on npm run build + npm start:
   "scripts": {
     "build": "rimraf dist && tsc",
     "start": "node dist/index.js"
-  },
-
+  }
 
 Server running on http://localhost:3000
 query: SELECT * FROM current_schema()
@@ -85,7 +85,7 @@ Data Source Initialization Error SyntaxError: Invalid or unexpected token
     at Module.require (node:internal/modules/cjs/loader:1340:12)
 
 
-Cause: Source files should be in dist by now.
+Cause: Source files should be in dist not src. 'src' is for development
 export const AppDataSource = new DataSource({
     type: process.env.DB_TYPE as any,
     host: process.env.DB_HOST,
@@ -102,7 +102,6 @@ export const AppDataSource = new DataSource({
 
 Solution: change to dist
 export const AppDataSource = new DataSource({
-    // ... other config
     entities: ["dist/entity/**/*.js"],
     migrations: ["dist/migration/**/*.js"],
     subscribers: ["dist/subscriber/**/*.js"],
