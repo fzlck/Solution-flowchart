@@ -1,0 +1,141 @@
+1. Create docker image for node + typeorm + expressjs + typescript app
+
+0. prerequisites: 
+1. package.json
+-- main entry point should be "dist/index.js" because the compiled js->ts code goes here
+
+"main": "dist/index.js",
+"scripts": {
+  "build": "tsc",
+  "test": "echo \"Error: no test specified\" && exit 1",
+  "dev": "nodemon --watch src --ext ts --exec ts-node src/index.ts",
+  "start": "node dist/index.js"
+}
+2. docker up
+3. VERY IMPORTANT: npm run build + node dist/index.js works! otherwise, fix everything first
+
+4. Dockerfile
+FROM node:18
+
+WORKDIR /usr/src/app
+
+COPY package*.json ./
+
+RUN npm install
+
+COPY . .
+
+RUN npm run build
+
+EXPOSE 3000
+
+CMD ["node", "dist/index.js"]
+
+
+5. docker build -t your-backend .
+6. docker run -p 3000:3000 your-backend
+
+Extra magic tricks when coming across errors been there done that.
+
+Check which process is using port 3000
+lsof -i :3000
+
+Stop the process using port 3000
+kill -9 3000
+
+Check running containers
+docker ps
+
+Stop docker container
+docker stop <CONTAINER ID>
+
+docker rm <CONTAINER ID>
+
+
+Errors encountered on npm run build + npm start:
+  "scripts": {
+    "build": "rimraf dist && tsc",
+    "start": "node dist/index.js"
+  },
+
+
+Server running on http://localhost:3000
+query: SELECT * FROM current_schema()
+Database connection failed SyntaxError: Invalid or unexpected token
+    at compileSourceTextModule (node:internal/modules/esm/utils:338:16)
+    at ModuleLoader.importSyncForRequire (node:internal/modules/esm/loader:322:18)
+    at loadESMFromCJS (node:internal/modules/cjs/loader:1414:24)
+    at Module._compile (node:internal/modules/cjs/loader:1547:5)
+    at Object..js (node:internal/modules/cjs/loader:1708:10)
+    at Module.load (node:internal/modules/cjs/loader:1318:32)
+    at Function._load (node:internal/modules/cjs/loader:1128:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:219:24)
+    at Module.require (node:internal/modules/cjs/loader:1340:12)
+Data Source Initialization Error SyntaxError: Invalid or unexpected token
+    at compileSourceTextModule (node:internal/modules/esm/utils:338:16)
+    at ModuleLoader.importSyncForRequire (node:internal/modules/esm/loader:322:18)
+    at loadESMFromCJS (node:internal/modules/cjs/loader:1414:24)
+    at Module._compile (node:internal/modules/cjs/loader:1547:5)
+    at Object..js (node:internal/modules/cjs/loader:1708:10)
+    at Module.load (node:internal/modules/cjs/loader:1318:32)
+    at Function._load (node:internal/modules/cjs/loader:1128:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:219:24)
+    at Module.require (node:internal/modules/cjs/loader:1340:12)
+
+
+Cause: Source files should be in dist by now.
+export const AppDataSource = new DataSource({
+    type: process.env.DB_TYPE as any,
+    host: process.env.DB_HOST,
+    port: parseInt(process.env.DB_PORT || "5432", 10),
+    username: process.env.DB_USERNAME,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_DATABASE,
+    synchronize: true, // Disable in production!
+    logging: true,
+    entities: ["src/entity/**/*.ts"],
+    migrations: ["src/migration/**/*.ts"],
+    subscribers: ["src/subscriber/**/*.ts"],
+});
+
+Solution: change to dist
+export const AppDataSource = new DataSource({
+    // ... other config
+    entities: ["dist/entity/**/*.js"],
+    migrations: ["dist/migration/**/*.js"],
+    subscribers: ["dist/subscriber/**/*.js"],
+});
+
+Morestuff: 
+package.json
+  "type": "commonjs",
+
+Morestuff to toggle between prod and dev:
+data-source.ts
+const entitiesPath = process.env.NODE_ENV === "production" ? "dist/entity/**/*.js" : "src/entity/**/*.ts";
+const migrationsPath = process.env.NODE_ENV === "production" ? "dist/migration/**/*.js" : "src/migration/**/*.ts";
+const subscribersPath = process.env.NODE_ENV === "production" ? "dist/subscriber/**/*.js" : "src/subscriber/**/*.ts";
+export const AppDataSource = new DataSource({
+    entities: [entitiesPath],
+    migrations: [migrationsPath],
+    subscribers: [subscribersPath],
+});
+
+.env
+NODE_ENV=production
+
+package.json
+{
+  "scripts": {
+    "dev": "NODE_ENV=development nodemon --watch src --ext ts --exec ts-node src/index.ts",
+    "build": "rimraf dist && tsc",
+    "start:dev": "NODE_ENV=development node dist/index.js",
+    "start:prod": "NODE_ENV=production node dist/index.js"
+  }
+}
+
+npm run build - to build
+npm run start:prod - for prod
+npm run start:dev - for dev
