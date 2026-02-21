@@ -1,0 +1,81 @@
+1. Deploy a GKE cluster
+set zone
+gcloud config set compute/zone us-central1-a
+
+set project id
+export PROJECT_ID=$(gcloud info \
+    --format='value(config.project)')
+
+deply standard GKE cluster
+gcloud container clusters create gmp-cluster --num-nodes=1 --zone us-central1-a
+
+
+2. Create a log-based alert
+resource.type="gce_instance" protoPayload.methodName="v1.compute.instances.stop"
+Actions -> Create log target -> Alert policy name: stopped vm
+Notification Channels
+
+3. Monitoring -> Alerting -> Detect -> Policies -> stopped vm 
+
+Task 3. Create a Docker reponsitory
+gcloud artifacts repositories create docker-repo --repository-format=docker \
+    --location=us-central1 --description="Docker repository" \
+    --project=qwiklabs-gcp-01-0bba2232fef7
+
+Artifact Registry -> Artifact Registry Repositories
+
+Cloud Shell: load a pre-built image from a storage bucket
+ wget https://storage.googleapis.com/spls/gsp1024/flask_telemetry.zip
+ unzip flask_telemetry.zip
+ docker load -i flask_telemetry.tar
+
+Run the following command to tag the image as flask-telemetry:v1:
+docker tag gcr.io/ops-demo-330920/flask_telemetry:61a2a7aabc7077ef474eb24f4b69faeab47deed9 \
+us-central1-docker.pkg.dev/qwiklabs-gcp-01-0bba2232fef7/docker-repo/flask-telemetry:v1
+
+Run the following command to push the docker image to Artifact Registry:
+docker push us-central1-docker.pkg.dev/qwiklabs-gcp-01-0bba2232fef7/docker-repo/flask-telemetry:v1
+
+
+
+
+Check that the cluslter you deployed has been fully provisioned:
+gcloud container clusters list
+Authenticate the cluster:
+gcloud container clusters get-credentials gmp-cluster
+Create a namespace to work in:
+kubectl create ns gmp-test
+Get the application which emits metrics at the /metrics endpoint:
+wget https://storage.googleapis.com/spls/gsp1024/gmp_prom_setup.zip
+unzip gmp_prom_setup.zip
+cd gmp_prom_setup
+
+In this step, you update flask_deployment.yaml to use the name of the image you pushed in previous steps:
+
+Use nano to open flask_deployment.yaml:
+`nano flask_deployment.yaml`
+Replace <ARTIFACT REGISTRY IMAGE NAME> with the following:
+us-central1-docker.pkg.dev/qwiklabs-gcp-01-0bba2232fef7/docker-repo/flask-telemetry:v1
+
+
+Run the followint to deploy a simple application that emits metrics at the /metrics endpoint
+kubectl -n gmp-test apply -f flask_deployment.yaml
+kubectl -n gmp-test apply -f flask_service.yaml
+
+Verify that the namespace is ready and emitting metrics:
+kubectl get services -n gmp-test
+
+Re-run the command until you see the External-IP address populated.
+
+Check that the Python Flask app is serving metrics with the following command:
+curl $(kubectl get services -n gmp-test -o jsonpath='{.items[*].status.loadBalancer.ingress[0].ip}')/metrics
+
+
+Logging -> Log-based Metrics Uncer Configure
+User-defined metrivs - hamburger vertical; Create alert from metric
+Name the alert policy: log based metric alert
+
+
+
+In Cloud Shell, run the following to generate some errors:
+timeout 120 bash -c -- 'while true; do curl $(kubectl get services -n gmp-test -o jsonpath='{.items[*].status.loadBalancer.ingress[0].ip}')/error; sleep $((RANDOM % 4)) ; done'
