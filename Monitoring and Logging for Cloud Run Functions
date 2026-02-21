@@ -1,0 +1,21 @@
+curl -LO 'https://github.com/tsenart/vegeta/releases/download/v12.12.0/vegeta_12.12.0_linux_386.tar.gz'
+
+Unpack
+tar -xvzf vegeta_12.12.0_linux_386.tar.gz
+
+Set and verify Cloud Run URL link
+CLOUD_RUN_URL=$(gcloud run services describe helloworld --region=us-west1 --format='value(status.url)')
+echo $CLOUD_RUN_URL
+
+Send traffic to cloud run function:
+echo "GET $CLOUD_RUN_URL" | ./vegeta attack -duration=300s -rate=200 > results.bin
+
+Logs Explorer
+resource.type="cloud_run_revision"
+resource.labels.service_name="helloworld"
+
+Actions dropdown
+metric type = Distribution
+Log-based metric name
+CloudRunFunctionLatency-Logs
+field name httpRequest.latency
